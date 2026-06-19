@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>宝宝识字</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+    .app {
+      width: 100%; max-width: 520px; height: 100vh; min-height: 620px;
+      padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+    }
+    .tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; background:#e9e9ec; border-radius:18px; padding:4px; flex:0 0 auto; }
+    button { border:0; font-family:inherit; cursor:pointer; touch-action:manipulation; user-select:none; }
+    button:active { transform:scale(.985); }
+    .tab { height:44px; border-radius:15px; font-size:19px; font-weight:750; color:#6e6e73; background:transparent; }
+    .tab.active { color:#1d1d1f; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.08); }
+    .card { flex:1 1 auto; min-height:0; background:#fff; border-radius:32px; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,.06); display:flex; flex-direction:column; position:relative; }
+    .stage { flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:flex-start; flex-direction:column; padding:12px 12px 0; position:relative; gap:8px; }
+    .english { height:34px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:24px; line-height:1; font-weight:750; letter-spacing:-.4px; color:#3a3a3c; }
+    .imageBox { width:100%; flex:1 1 auto; min-height:0; border-radius:28px; overflow:hidden; display:flex; align-items:center; justify-content:center; position:relative; }
+    .icon { font-size:clamp(130px, 42vw, 226px); line-height:1; filter:drop-shadow(0 9px 12px rgba(0,0,0,.05)); transform:translateY(-2px); }
+    .imageBox svg { width:100%; height:100%; display:block; }
+    .wordPage .imageBox { flex:0 0 43%; }
+    .word { flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; font-size:clamp(112px, 35vw, 188px); font-weight:850; line-height:.92; letter-spacing:-5px; width:100%; padding-bottom:2px; }
+    .options { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; padding:8px 10px 10px; background:#fff; flex:0 0 auto; }
+    .option { height:84px; min-width:0; border-radius:24px; background:#f5f5f7; color:#1d1d1f; font-size:clamp(50px, 13vw, 70px); font-weight:840; line-height:.92; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1px rgba(0,0,0,.035); overflow:hidden; padding-bottom:6px; }
+    .option.correct { background:#d9fbe6; color:#138a42; }
+    .option.wrong { background:#ffe1e1; color:#d33a3a; }
+    .nav { display:grid; grid-template-columns:1fr 1fr; gap:8px; flex:0 0 auto; }
+    .nav button { height:48px; border-radius:19px; background:#fff; color:#1d1d1f; font-size:28px; font-weight:650; box-shadow:0 5px 16px rgba(0,0,0,.05); }
+    .star { position:absolute; inset:0; z-index:5; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.66); font-size:118px; animation:starPop .65s ease forwards; pointer-events:none; }
+    @keyframes starPop { 0% { opacity:0; transform:scale(.2); } 35% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:scale(1.45); } }
+    .shake { animation:shake .28s ease; }
+    @keyframes shake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-8px); } 75% { transform:translateX(8px); } }
+    @media (max-height:690px) {
+      .app { min-height:560px; padding:10px; gap:7px; }
+      .tab { height:40px; font-size:18px; }
+      .english { height:28px; font-size:20px; }
+      .icon { font-size:clamp(105px, 35vw, 175px); }
+      .word { font-size:clamp(88px, 28vw, 145px); }
+      .option { height:68px; font-size:clamp(40px, 10.8vw, 56px); border-radius:20px; padding-bottom:5px; }
+      .nav button { height:42px; }
+      .wordPage .imageBox { flex-basis:38%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="tabs"><button class="tab active" id="learnTab">认一认</button><button class="tab" id="findTab">找一找</button></div>
+    <section class="card" id="card"><div class="stage" id="stage"></div><div class="options" id="options" style="display:none"></div></section>
+    <div class="nav"><button id="prevBtn">‹</button><button id="nextBtn">›</button></div>
+  </main>
+<script>
+const words = [{"word": "云", "en": "Cloud", "icon": "☁️", "bg": "#DDF2FF"}, {"word": "雨", "en": "Rain", "icon": "🌧️", "bg": "#E8F0FF"}, {"word": "风", "en": "Wind", "icon": "🌬️", "bg": "#EAF7F0", "svg": "wind_tree"}, {"word": "天", "en": "Sky", "icon": "🌤️", "bg": "#EAF6FF", "svg": "blue_sky"}, {"word": "山", "en": "Mountain", "icon": "⛰️", "bg": "#EEF4EA"}, {"word": "水", "en": "Water", "icon": "💧", "bg": "#E6F7FF"}, {"word": "河", "en": "River", "icon": "🏞️", "bg": "#EAF7FF", "svg": "river_simple"}, {"word": "冰", "en": "Ice", "icon": "🧊", "bg": "#EEF9FF"}, {"word": "走", "en": "Walk", "icon": "🚶", "bg": "#F3F3FF"}, {"word": "飞", "en": "Fly", "icon": "🪽", "bg": "#F7F4FF"}, {"word": "爸", "en": "Dad", "icon": "👨", "bg": "#FFF1E6"}, {"word": "妈", "en": "Mom", "icon": "👩", "bg": "#FFF0F5"}, {"word": "宝", "en": "Baby", "icon": "👶", "bg": "#FFF7E8"}, {"word": "豆", "en": "Beans", "icon": "🫘", "bg": "#F4F1E8"}, {"word": "面", "en": "Noodles", "icon": "🍜", "bg": "#FFF5E1"}, {"word": "鱼", "en": "Fish", "icon": "🐟", "bg": "#E8F8FF"}, {"word": "肉", "en": "Meat", "icon": "🥩", "bg": "#FFF0EC"}, {"word": "猫", "en": "Cat", "icon": "🐱", "bg": "#FFF4DE"}, {"word": "狗", "en": "Dog", "icon": "🐶", "bg": "#FFF1D8"}, {"word": "羊", "en": "Sheep", "icon": "🐑", "bg": "#F7F7F2"}, {"word": "猪", "en": "Pig", "icon": "🐷", "bg": "#FFF0F4"}, {"word": "牛", "en": "Cow", "icon": "🐮", "bg": "#F8F6EF"}, {"word": "大", "en": "Big", "icon": "🐘", "bg": "#EEF2FF", "svg": "big"}, {"word": "小", "en": "Small", "icon": "🐭", "bg": "#F5F5F5", "svg": "small"}, {"word": "好", "en": "Good", "icon": "👍", "bg": "#EEFBEF"}, {"word": "不", "en": "No", "icon": "🙅", "bg": "#FFF0F0"}, {"word": "上", "en": "Up", "icon": "⬆️", "bg": "#EFF6FF"}, {"word": "下", "en": "Down", "icon": "⬇️", "bg": "#EFF6FF"}, {"word": "左", "en": "Left", "icon": "⬅️", "bg": "#F1F5FF"}, {"word": "右", "en": "Right", "icon": "➡️", "bg": "#F1F5FF"}];
+let mode = "learn", index = 0, page = 0, locked = false;
+const stage = document.getElementById("stage"), optionsEl = document.getElementById("options"), card = document.getElementById("card"), learnTab = document.getElementById("learnTab"), findTab = document.getElementById("findTab");
+function current() { return words[index]; }
+function customSvg(type) {
+  const start = '<svg viewBox="0 0 900 620" xmlns="http://www.w3.org/2000/svg">';
+  const end = '</svg>';
+  const bg = c => `<rect width="900" height="620" fill="${c}"/>`;
+  const svgs = {
+    wind_tree: bg('#EAF7F0') + '<rect x="0" y="470" width="900" height="150" fill="#B7E4B5"/><g stroke="#4A90E2" stroke-width="18" fill="none" stroke-linecap="round"><path d="M130 170 C250 115 340 135 430 175"/><path d="M90 255 C230 205 335 215 465 260"/><path d="M120 340 C250 310 345 320 435 355"/></g><g transform="translate(585 345) rotate(-17)"><rect x="-22" y="-15" width="44" height="165" rx="20" fill="#8B5A2B"/><ellipse cx="-45" cy="-70" rx="120" ry="70" fill="#34C759"/><ellipse cx="55" cy="-90" rx="120" ry="75" fill="#30B957"/><ellipse cx="40" cy="-25" rx="135" ry="78" fill="#41D36B"/></g>',
+    blue_sky: bg('#BFE7FF') + '<circle cx="710" cy="140" r="72" fill="#FFD95C"/><circle cx="260" cy="220" r="58" fill="#fff"/><circle cx="330" cy="190" r="78" fill="#fff"/><circle cx="410" cy="230" r="55" fill="#fff"/><rect x="232" y="228" width="215" height="58" rx="29" fill="#fff"/>',
+    river_simple: bg('#EAF7FF') + '<rect y="465" width="900" height="155" fill="#C9EEC8"/><path d="M0 410 C145 350 255 430 400 365 C555 295 685 345 900 285 L900 620 L0 620Z" fill="#4DB7FF"/><path d="M0 450 C150 395 260 455 410 395 C555 340 690 385 900 330" fill="none" stroke="#BDEBFF" stroke-width="24" stroke-linecap="round"/>',
+    big: bg('#EEF2FF') + '<circle cx="345" cy="325" r="165" fill="#7C9CFF"/><circle cx="640" cy="395" r="62" fill="#C8D2FF"/>',
+    small: bg('#F5F5F5') + '<circle cx="300" cy="335" r="145" fill="#D1D5DB"/><circle cx="615" cy="395" r="48" fill="#FFB84D"/>'
+  };
+  return start + svgs[type] + end;
+}
+function imageHtml(item) {
+  const visual = item.svg ? customSvg(item.svg) : `<div class="icon">${item.icon}</div>`;
+  return `<div class="english">${item.en}</div><div class="imageBox" style="background:${item.bg}">${visual}</div>`;
+}
+function setMode(nextMode) { mode = nextMode; page = 0; locked = false; render(); }
+function nextWord() { index = (index + 1) % words.length; page = 0; locked = false; render(); }
+function prevWord() { index = (index - 1 + words.length) % words.length; page = 0; locked = false; render(); }
+function render() { const item = current(); learnTab.classList.toggle("active", mode === "learn"); findTab.classList.toggle("active", mode === "find"); if (mode === "learn") renderLearn(item); else renderFind(item); }
+function renderLearn(item) { optionsEl.style.display = "none"; optionsEl.innerHTML = ""; stage.className = page === 1 ? "stage wordPage" : "stage"; stage.innerHTML = page === 0 ? imageHtml(item) : imageHtml(item) + `<div class="word">${item.word}</div>`; }
+function renderFind(item) { stage.className = "stage"; stage.innerHTML = imageHtml(item); optionsEl.style.display = "grid"; renderOptions(item); }
+function renderOptions(item) { const others = words.filter(w => w.word !== item.word).sort(() => Math.random() - 0.5).slice(0, 2); const opts = [item, ...others].sort(() => Math.random() - 0.5); optionsEl.innerHTML = ""; opts.forEach(opt => { const button = document.createElement("button"); button.className = "option"; button.textContent = opt.word; button.onclick = (e) => { e.stopPropagation(); if (locked) return; if (opt.word === item.word) { locked = true; button.classList.add("correct"); showStar(); setTimeout(nextWord, 650); } else { button.classList.add("wrong"); card.classList.add("shake"); setTimeout(() => { card.classList.remove("shake"); button.classList.remove("wrong"); }, 320); } }; optionsEl.appendChild(button); }); }
+function showStar() { const star = document.createElement("div"); star.className = "star"; star.textContent = "⭐"; card.appendChild(star); setTimeout(() => star.remove(), 650); }
+stage.onclick = () => { if (mode === "learn") { if (page === 0) page = 1; else nextWord(); render(); } };
+learnTab.onclick = () => setMode("learn"); findTab.onclick = () => setMode("find"); document.getElementById("nextBtn").onclick = nextWord; document.getElementById("prevBtn").onclick = prevWord;
+render();
+</script>
+</body>
+</html>
